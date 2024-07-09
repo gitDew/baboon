@@ -2,17 +2,18 @@ package lexer
 
 import (
   "baboon/token"
+  "fmt"
 )
 
 type Lexer struct {
-  input string
+  input []rune
   currentPosition int
   nextPosition int
-  ch byte
+  ch rune
 }
 
 func New(input string) *Lexer {
-  ret := &Lexer{input: input}
+  ret := &Lexer{input: []rune(input)}
   ret.readChar()
   return ret
 }
@@ -32,6 +33,8 @@ func (l *Lexer) NextToken() token.Token {
   var tok token.Token
 
   l.skipWhitespace()
+
+  fmt.Printf("%v %v\n", l.ch, string(l.ch))
 
   switch l.ch {
   case '+':
@@ -75,24 +78,13 @@ func (l *Lexer) NextToken() token.Token {
   case 0:
     tok = token.Token{token.EOF, ""}
   default:
-    if isLetter(l.ch) {
-      startPosition := l.currentPosition
-
-      for isLetter(l.ch) {
-        l.readChar()
-      }
-      literal := l.input[startPosition:l.currentPosition]
-      return token.Token{token.LookupIdent(literal), literal}
-    } else if isDigit(l.ch) {
-      startPosition := l.currentPosition
-
-      for isDigit(l.ch) {
-        l.readChar()
-      }
-      literal := l.input[startPosition:l.currentPosition]
-      return token.Token{token.INT, literal}
+    if isDigit(l.ch) {
+      return token.Token{token.INT, readLiteral(l, isDigit)}
     } else {
-      tok = token.Token{token.ILLEGAL, ""}
+      literal := readLiteral(l, func(ch rune) bool {
+        return isLetter(ch) || (!token.IsDelimiter(ch) && !token.IsOperator(ch) && !isWhitespace(ch))
+      })
+      return token.Token{token.LookupIdent(literal), literal}
     } 
   }
 
@@ -100,20 +92,34 @@ func (l *Lexer) NextToken() token.Token {
   return tok
 }
 
+func readLiteral(l *Lexer, predicate func(rune) bool) string {
+  startPosition := l.currentPosition
+
+  for predicate(l.ch) {
+    l.readChar()
+  }
+  return string(l.input[startPosition:l.currentPosition])
+}
+
 func (l *Lexer) skipWhitespace() {
-  for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+  for isWhitespace(l.ch) {
     l.readChar()
   }
 }
-func isLetter(ch byte) bool {
+
+func isWhitespace(ch rune) bool {
+  return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'
+}
+
+func isLetter(ch rune) bool {
   return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_'
 }
 
-func isDigit(ch byte) bool {
+func isDigit(ch rune) bool {
   return '0' <= ch && ch <= '9'
 }
 
-func (l *Lexer) peekChar() byte {
+func (l *Lexer) peekChar() rune {
   if l.nextPosition >= len(l.input) {
     return 0
   } else {

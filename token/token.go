@@ -1,5 +1,7 @@
 package token
 
+import "slices"
+
 type Token struct {
   Type    TokenType
   Literal string
@@ -63,3 +65,30 @@ func LookupIdent(ident string) TokenType {
     return IDENT
 }
 
+var delimiterChars = []rune{
+    ';',
+    '(',
+    ')',
+    '{',
+    '}',
+    ',',
+}
+
+var operatorChars = []rune{
+    '=',
+    '+',
+    '-',
+    '!',
+    '/',
+    '*',
+    '<',
+    '>',
+}
+
+func IsOperator(ch rune) bool {
+    return slices.Contains(operatorChars, ch)
+}
+
+func IsDelimiter(ch rune) bool {
+    return slices.Contains(delimiterChars, ch)
+}

@@ -83,7 +83,7 @@ func TestIsLetter(t *testing.T) {
   letters := "This_String_Is_OK"
 
   for i := 0; i < len(letters); i++ {
-    if !isLetter(letters[i]) {
+    if !isLetter(rune(letters[i])) {
       t.Fatalf("Expected isLetter to return true but was false for %q.", letters[i])
     }
   }
@@ -206,4 +206,42 @@ func TestFromBook(t *testing.T) {
 				i, tt.expectedLiteral, tok.Literal)
 		}
 	}
+}
+
+func TestUtf8(t *testing.T) {
+  input := `let 🐱🐶 = 🐱 + 🐶;
+            let résumés = 3 * 📄;`
+
+  tests := []token.Token{
+    {token.LET, "let"},
+    {token.IDENT, "🐱🐶"},
+    {token.ASSIGN, "="},
+    {token.IDENT, "🐱"},
+    {token.PLUS, "+"},
+    {token.IDENT, "🐶"},
+    {token.SEMICOLON, ";"},
+    {token.LET, "let"},
+    {token.IDENT, "résumés"},
+    {token.ASSIGN, "="},
+		{token.INT, "3"},
+		{token.ASTERISK, "*"},
+    {token.IDENT, "📄"},
+    {token.SEMICOLON, ";"},
+    {token.EOF, ""},
+  }
+
+  l := New(input)
+
+  for i, expected := range tests {
+    token := l.NextToken()
+
+    if token.Type != expected.Type {
+      t.Errorf("tests[%d]: Expected token type %q but was %q instead.", i, expected.Type, token.Type)
+    }
+
+    if token.Literal != expected.Literal {
+      t.Errorf("tests[%d]: Expected literal %q but was %q instead.", i, expected.Literal, token.Literal)
+    }
+  }
+
 }
