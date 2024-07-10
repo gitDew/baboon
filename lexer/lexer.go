@@ -2,7 +2,6 @@ package lexer
 
 import (
   "baboon/token"
-  "fmt"
 )
 
 type Lexer struct {
@@ -33,8 +32,6 @@ func (l *Lexer) NextToken() token.Token {
   var tok token.Token
 
   l.skipWhitespace()
-
-  fmt.Printf("%v %v\n", l.ch, string(l.ch))
 
   switch l.ch {
   case '+':
